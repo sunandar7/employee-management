@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const roleController = require('../controllers/role_controller');
-const { authenticate } = require('../middleware/auth');
+const { authenticate } = require('../middleware/authenticate');
 
 router.post('/role', authenticate, roleController.create);
 router.get('/role', authenticate, roleController.getAllRoles);

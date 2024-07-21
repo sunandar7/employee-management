@@ -7,32 +7,33 @@ const create = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            const {position_name, created_by} = req.body;
-
-            if(!position_name || !created_by) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'All fields are required'
-                });
-            }
-
-            const newPosition = await db.Position.create({
-                position_name,
-                created_by
-            });
-
-            return res.status(201).json({
-                success: true,
-                message: 'Position created successfully',
-                data: newPosition
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        const {position_name} = req.body;
+        const created_by = userId;
+
+        if(!position_name || !created_by) {
+            return res.status(400).json({
+                success: false,
+                error: 'All fields are required'
+            });
+        }
+
+        const newPosition = await db.Position.create({
+            position_name,
+            created_by
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: 'Position created successfully',
+            data: newPosition
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -47,26 +48,26 @@ const getAllPositions = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            const positions = await db.Position.findAll();
-
-            if(!positions) {
-                return res.status(404).json({
-                    success: false,
-                    error: "Position not found"
-                });
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: positions
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        const positions = await db.Position.findAll();
+
+        if(!positions) {
+            return res.status(404).json({
+                success: false,
+                error: "Position not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: positions
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -81,33 +82,33 @@ const getPositionById = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            if(!req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid parameter'
-                });
-            }
-    
-            const position = await db.Position.findByPk(req.params.id);
-    
-            if(!position) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Position not found'
-                })
-            }
-    
-            return res.status(200).json({
-                success: true,
-                data: position
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        if(!req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid parameter'
+            });
+        }
+    
+        const position = await db.Position.findByPk(req.params.id);
+    
+        if(!position) {
+            return res.status(404).json({
+                success: false,
+                error: 'Position not found'
+            })
+        }
+    
+        return res.status(200).json({
+            success: true,
+            data: position
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -122,29 +123,30 @@ const updatePosition = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            const {position_name, updated_by} = req.body;
-
-            if(!position_name || !updated_by || !req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid request'
-                });
-            }
-    
-            const position = await db.Position.update({position_name, updated_by}, {where: {id: req.params.id}});
-        
-            return res.status(200).json({
-                success: true,
-                message: 'Position updated successfully',
-                data: position
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        const {position_name} = req.body;
+        const updated_by = userId;
+
+        if(!position_name || !updated_by || !req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid request'
+            });
+        }
+    
+        const position = await db.Position.update({position_name, updated_by}, {where: {id: req.params.id}});
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Position updated successfully',
+            data: position
+        });
     } catch (error) {
        return res.status(500).json({
             success: false,
@@ -159,35 +161,35 @@ const deletePosition = async (req, res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            if(!req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid parameter'
-                });
-            }
-          
-            const position = await db.Position.findByPk(req.params.id);
-          
-            if (!position) {
-              return res.status(404).json({
-                success: false,
-                error: 'Position not found'
-              });
-            }
-          
-            await position.destroy();
-          
-            return res.status(200).json({
-              success: true,
-              message: 'Position deleted successfully'
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        if(!req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid parameter'
+            });
+        }
+          
+        const position = await db.Position.findByPk(req.params.id);
+          
+        if (!position) {
+            return res.status(404).json({
+                success: false,
+                error: 'Position not found'
+            });
+        }
+          
+        await position.destroy();
+          
+        return res.status(200).json({
+            success: true,
+            message: 'Position deleted successfully'
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,

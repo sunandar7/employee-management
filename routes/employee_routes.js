@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const employeeController = require('../controllers/employee_controller');
-const { authenticate } = require('../middleware/auth');
+const { authenticate } = require('../middleware/authenticate');
 
 router.post('/employee', authenticate, employeeController.upload, employeeController.create);
 router.get('/employee', authenticate, employeeController.getAllEmployees);
