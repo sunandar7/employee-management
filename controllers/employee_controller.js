@@ -8,7 +8,7 @@ const { Op } = require('sequelize');
 // create employee
 const create = async (req,res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user ? req.user.id : 1;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
         if(!isAdminstrator) {

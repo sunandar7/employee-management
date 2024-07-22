@@ -13,7 +13,7 @@ const generateToken = (payload) => {
 const singup  = async (req,res) => {
     try {
         const { role_id, name, email, phone, password } = req.body;
-        const created_by = req.user.id;
+        const created_by = req.user ? req.user.id : 1;
         const hashPassword = await bcrypt.hash(password,8);
 
         if(!role_id || !name || !email || !phone || !password || !created_by) {
