@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const departmentController = require('../controllers/department_controller');
-const { authenticate } = require('../middleware/auth');
+const { authenticate } = require('../middleware/authenticate');
 
 router.post('/department', authenticate, departmentController.create);
 router.get('/department', authenticate, departmentController.getAllDepartments);

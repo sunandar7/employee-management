@@ -8,44 +8,45 @@ const { Op } = require('sequelize');
 // create employee
 const create = async (req,res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user ? req.user.id : 1;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            const { employee_name, position_id, department_id, age, dob, father_name, address, phone, created_by } = req.body;
-            const profile = req.file.path;
-
-            if(!employee_name || !position_id || !department_id || !age || !dob || !father_name || !address || !phone || !profile || !created_by) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'All fields are required'
-                });
-            } 
-
-            const newEmployee  = await db.Employee.create({
-                employee_name,
-                position_id,
-                department_id,
-                age,
-                dob,
-                father_name,
-                address,
-                phone,
-                profile,
-                created_by
-            });
-
-            return res.status(201).json({
-                success: true,
-                message: "Employee created successfully",
-                data: newEmployee
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        const { employee_name, position_id, department_id, age, dob, father_name, address, phone } = req.body;
+        const profile = req.file.path;
+        const created_by = userId;
+
+        if(!employee_name || !position_id || !department_id || !age || !dob || !father_name || !address || !phone || !profile || !created_by) {
+            return res.status(400).json({
+                success: false,
+                error: 'All fields are required'
+            });
+        } 
+
+        const newEmployee  = await db.Employee.create({
+            employee_name,
+            position_id,
+            department_id,
+            age,
+            dob,
+            father_name,
+            address,
+            phone,
+            profile,
+            created_by
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Employee created successfully",
+            data: newEmployee
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -84,35 +85,35 @@ const getAllEmployees = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            const page = parseInt(req.query.page) || 1;
-            const pageSize = parseInt(req.query.pageSize) || 10;
-            const sort = req.query.sort ? JSON.parse(req.query.sort) : [['employee_name', 'ASC']];
-            const filter = req.query.position_id ? { position_id: req.query.position_id } : {};
-            const search = req.query.search ? { employee_name: { [Op.like]: `%${req.query.search}%` } } : {};
-    
-            // combined search & filter 
-            const combinedFilter = { ...filter, ...search };
-    
-            const employees = await getPaginatedData(db.Employee, page, pageSize, combinedFilter, sort);
-    
-            if(!employees) {
-                return res.status(404).json({
-                    success: false,
-                    error: "Employee not found"
-                });
-            }
-    
-            return res.status(200).json({
-                success: true,
-                data: employees
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const sort = req.query.sort ? JSON.parse(req.query.sort) : [['employee_name', 'ASC']];
+        const filter = req.query.position_id ? { position_id: req.query.position_id } : {};
+        const search = req.query.search ? { employee_name: { [Op.like]: `%${req.query.search}%` } } : {};
+    
+        // combined search & filter 
+        const combinedFilter = { ...filter, ...search };
+    
+        const employees = await getPaginatedData(db.Employee, page, pageSize, combinedFilter, sort);
+    
+        if(!employees) {
+            return res.status(404).json({
+                success: false,
+                error: "Employee not found"
+            });
+        }
+    
+        return res.status(200).json({
+            success: true,
+            data: employees
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -127,45 +128,45 @@ const getEmployeeById = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            if(!req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid parameter'
-                });
-            }
-    
-            const employee = await db.Employee.findByPk(req.params.id, {
-                attributes: { exclude: ['position_id', 'department_id'] },
-                include: [
-                    {
-                        model: db.Position,
-                        attributes: ['id', 'position_name']
-                    },
-                    {
-                        model: db.Department,
-                        attributes: ['id', 'department_name']
-                    }
-                ]
-            });
-    
-            if(!employee) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'Employee not found'
-                })
-            }
-    
-            return res.status(200).json({
-                success: true,
-                data: employee
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        if(!req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid parameter'
+            });
+        }
+    
+        const employee = await db.Employee.findByPk(req.params.id, {
+            attributes: { exclude: ['position_id', 'department_id'] },
+            include: [
+                {
+                    model: db.Position,
+                    attributes: ['id', 'position_name']
+                },
+                {
+                    model: db.Department,
+                    attributes: ['id', 'department_name']
+                }
+            ]
+        });
+    
+        if(!employee) {
+            return res.status(404).json({
+                success: false,
+                error: 'Employee not found'
+            })
+        }
+    
+        return res.status(200).json({
+            success: true,
+            data: employee
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -180,41 +181,42 @@ const updateEmployee = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            const { employee_name, position_id, department_id, age, dob, father_name, address, phone, updated_by } = req.body;
-            const profile = req.file.path;
-
-            if(!employee_name || !position_id || !department_id || !age || !dob || !father_name || !address || !phone || !profile || !updated_by || !req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid request'
-                });
-            } 
-
-            const employee = await db.Employee.update({
-                employee_name,
-                position_id,
-                department_id,
-                age,
-                dob,
-                father_name,
-                address,
-                phone,
-                profile,
-                updated_by
-            }, {where: {id: req.params.id}});
-
-            return res.status(200).json({
-                success: true,
-                message: 'Employee updated successfully',
-                data: employee
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        const { employee_name, position_id, department_id, age, dob, father_name, address, phone } = req.body;
+        const profile = req.file.path;
+        const updated_by = userId;
+
+        if(!employee_name || !position_id || !department_id || !age || !dob || !father_name || !address || !phone || !profile || !updated_by || !req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid request'
+            });
+        } 
+
+        const employee = await db.Employee.update({
+            employee_name,
+            position_id,
+            department_id,
+            age,
+            dob,
+            father_name,
+            address,
+            phone,
+            profile,
+            updated_by
+        }, {where: {id: req.params.id}});
+
+        return res.status(200).json({
+            success: true,
+            message: 'Employee updated successfully',
+            data: employee
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -229,35 +231,35 @@ const deleteEmployee = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            if(!req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid parameter'
-                });
-            }
-    
-            const employee = await db.Employee.findByPk(req.params.id);
-    
-            if (!employee) {
-                return res.status(404).json({
-                  success: false,
-                  error: 'Employee not found'
-                });
-            }
-            
-            await employee.destroy();
-            
-            return res.status(200).json({
-                success: true,
-                message: 'Employee deleted successfully'
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        if(!req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid parameter'
+            });
+        }
+    
+        const employee = await db.Employee.findByPk(req.params.id);
+    
+        if (!employee) {
+            return res.status(404).json({
+                success: false,
+                error: 'Employee not found'
+            });
+        }
+            
+        await employee.destroy();
+            
+        return res.status(200).json({
+            success: true,
+            message: 'Employee deleted successfully'
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,

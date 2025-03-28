@@ -12,7 +12,8 @@ const generateToken = (payload) => {
 // user singup
 const singup  = async (req,res) => {
     try {
-        const { role_id, name, email, phone, password, created_by } = req.body;
+        const { role_id, name, email, phone, password } = req.body;
+        const created_by = req.user ? req.user.id : 1;
         const hashPassword = await bcrypt.hash(password,8);
 
         if(!role_id || !name || !email || !phone || !password || !created_by) {
@@ -71,7 +72,7 @@ const login = async (req,res) => {
             role_id: result.role_id
         });
 
-        return res.json({
+        return res.status(200).json({
             success: true,
             token
         });
@@ -88,37 +89,34 @@ const login = async (req,res) => {
 const getAllUsers = async (req,res) => {
     try {
         const userId = req.user.id;
-        console.log('User ID:', userId);
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
-        console.log('Adminstrator:', isAdminstrator);
 
-        if(isAdminstrator) {
-            const users = await db.User.findAll({
-                attributes: { exclude: 'role_id' },
-                include: {
-                    model: db.Role,
-                    attributes: ['id', 'role_name']
-                }
-            });
-    
-            if(!users) {
-                return res.status(404).json({
-                    success: false,
-                    error: "User not found"
-                });
-            }
-    
-            return res.status(200).json({
-                success: true,
-                data: users
-            });
-        } else {
+        if(!isAdminstrator) {
             return res.status(401).json({ 
                 success: false, 
                 error: "Unauthorized Access" 
             });
         }
 
+        const users = await db.User.findAll({
+            attributes: { exclude: 'role_id' },
+            include: {
+                model: db.Role,
+                attributes: ['id', 'role_name']
+            }
+        });
+    
+        if(!users) {
+            return res.status(404).json({
+                success: false,
+                error: "User not found"
+            });
+        }
+    
+        return res.status(200).json({
+            success: true,
+            data: users
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -133,40 +131,39 @@ const getUserById = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            if(!req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid parameter'
-                });
-            }
-    
-            const user = await db.User.findByPk(req.params.id, {
-                attributes: { exclude: 'role_id' },
-                include: {
-                    model: db.Role,
-                    attributes: ['id', 'role_name']
-                }
-            });
-    
-            if(!user) {
-                return res.status(404).json({
-                    success: false,
-                    error: 'User not found'
-                })
-            }
-    
-            return res.status(200).json({
-                success: true,
-                data: user
-            });
-        } else {
+        if(!isAdminstrator) {
             return res.status(401).json({ 
                 success: false, 
                 error: "Unauthorized Access" 
             });
         }
 
+        if(!req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid parameter'
+            });
+        }
+    
+        const user = await db.User.findByPk(req.params.id, {
+            attributes: { exclude: 'role_id' },
+            include: {
+                model: db.Role,
+                attributes: ['id', 'role_name']
+            }
+        });
+    
+        if(!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            })
+        }
+    
+        return res.status(200).json({
+            success: true,
+            data: user
+        }); 
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -181,36 +178,36 @@ const updateUser = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            const { role_id,name,email,phone, updated_by } = req.body;
-
-            if(!role_id || !name || !email || !phone || !updated_by || !req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid request'
-                });
-            }
-
-            const user = await db.User.update({
-                role_id,
-                name,
-                email,
-                phone,
-                updated_by
-            }, {where: {id: req.params.id}});
-
-            return res.status(200).json({
-                success: true,
-                message: 'User updated successfully',
-                data: user
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
 
+        const { role_id,name,email,phone } = req.body;
+        const updated_by = userId;
+
+        if(!role_id || !name || !email || !phone || !updated_by || !req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid request'
+            });
+        }
+
+        const user = await db.User.update({
+            role_id,
+            name,
+            email,
+            phone,
+            updated_by
+        }, {where: {id: req.params.id}});
+
+        return res.status(200).json({
+            success: true,
+            message: 'User updated successfully',
+            data: user
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -225,35 +222,35 @@ const deleteUser = async (req,res) => {
         const userId = req.user.id;
         const isAdminstrator = await authorizeRole.isAdminstrator(userId);
 
-        if(isAdminstrator) {
-            if(!req.params.id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid parameter'
-                });
-            }
-    
-            const user = await db.User.findByPk(req.params.id);
-    
-            if (!user) {
-                return res.status(404).json({
-                  success: false,
-                  error: 'User not found'
-                });
-            }
-            
-            await user.destroy();
-            
-            return res.status(200).json({
-                success: true,
-                message: 'User deleted successfully'
-            });
-        } else {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized Access"
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
             });
         }
+
+        if(!req.params.id) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid parameter'
+            });
+        }
+    
+        const user = await db.User.findByPk(req.params.id);
+    
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+            
+        await user.destroy();
+            
+        return res.status(200).json({
+            success: true,
+            message: 'User deleted successfully'
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
