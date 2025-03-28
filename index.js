@@ -39,7 +39,7 @@ app.get('/', (req,res) => {
 app.use('/api', [userRoute, roleRoute, departmentRoute, positionRoute, employeeRoute]);
 
 db.sequelize
-  .sync()
+  .sync({alter:true})
   .then(() => {
     console.log("Successfully Synced with mySQL DB.");
   })

@@ -9,7 +9,7 @@ const authenticate = async (req,res,next) => {
     }
 
     const tokenDetail = jwt.verify(token, SECRET_KEY);
-    console.log('token',tokenDetail);
+    // console.log('token',tokenDetail);
     req.user = tokenDetail;
     return next();
 }

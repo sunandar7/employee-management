@@ -216,6 +216,84 @@ const updateUser = async (req,res) => {
     }
 }
 
+const changepassword = async (req,res) => {
+    try {
+        const userId = req.user.id;
+        const {currentPassword, newPassword} = req.body;
+
+        const user = await db.User.findByPk(userId);
+
+        if(!user) {
+            return res.status(404).json({
+                success: false,
+                error: "User not found"
+            })
+        }
+
+        const isMathch = await bcrypt.compare(currentPassword, user.password);
+        if(!isMathch) {
+            return res.status(404).json({
+                success: false,
+                error: "Current password is incorrect"
+            })
+        }
+
+        // hash the new password
+        const hashPassword = await bcrypt.hash(newPassword,8);
+        user.password = hashPassword;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Password has been changed successfully"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: `Changed password failed with error code: ${error}`
+        })
+    }
+}
+
+const changePasswordBySuperadmin = async (req,res) => {
+    try {
+        const user_id = req.user.id;
+        const isAdminstrator = await authorizeRole.isAdminstrator(user_id);
+
+        if(!isAdminstrator) {
+            return res.status(401).json({ 
+                success: false, 
+                error: "Unauthorized Access" 
+            });
+        }
+        const {userId,newPassword} = req.body;
+  
+        const user = await db.User.findByPk(userId);
+        console.log("User", user);
+        if(!user) {
+            return res.status(404).json({
+            success: false,
+            error: "User not found"
+            })
+        }
+  
+        // hash the new password
+        const hashPassword = await bcrypt.hash(newPassword,10);
+        user.password = hashPassword;
+        await user.save();
+    
+        return res.status(200).json({
+            success: true,
+            message: "Password has been changed successfully"
+        });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        error: `Changed password failed with error code: ${error}`
+      })
+    }
+};
+
 // delete user
 const deleteUser = async (req,res) => {
     try {
@@ -259,4 +337,4 @@ const deleteUser = async (req,res) => {
     }
 }
 
-module.exports = {singup, login, getAllUsers, getUserById, updateUser, deleteUser}
+module.exports = {singup, login, getAllUsers, getUserById, updateUser, deleteUser, changepassword, changePasswordBySuperadmin}

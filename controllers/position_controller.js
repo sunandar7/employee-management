@@ -198,4 +198,40 @@ const deletePosition = async (req, res) => {
     }
 }
 
+// const createMultiplePlots = asyncHandler(async (req, res, next) => {
+//     try {
+//       const plots = req.body;
+  
+//       if (!Array.isArray(plots) || plots.length === 0) {
+//         return res.status(400).json({
+//           success: false,
+//           error: "Request body should be an array of plot objects",
+//         });
+//       }
+  
+//       for (const plot of plots) {
+//         const { quart_id, name } = plot;
+//         if (!quart_id || !name) {
+//           return res.status(400).json({
+//             success: false,
+//             error: "All fields are required",
+//           });
+//         }
+//       }
+  
+//       const plotDatas = await db.Plot.bulkCreate(plots);
+  
+//       return res.status(201).json({
+//         success: true,
+//         message: "Plots created successfully",
+//         data: plotDatas,
+//       });
+//     } catch (error) {
+//       return res.status(500).json({
+//         success: false,
+//         error: `Failed to create plots with error: ${error.message}`,
+//       });
+//     }
+// });
+
 module.exports = {create, getAllPositions, getPositionById, updatePosition, deletePosition}
